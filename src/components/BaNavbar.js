@@ -7,17 +7,17 @@ import {Link} from "react-router-dom";
 const routes = [
     {
         label: <Link to="/equivalence/enter">Äquivalenz einpflegen</Link>,
-        key: 'equivalence-enter',
+        key: 'enter-equivalence',
         icon: <FilePdfOutlined/>,
     },
     {
         label: <Link to="/equivalence/check">Äquivalenz überprüfen</Link>,
-        key: 'equivalence-check',
+        key: 'check-equivalence',
         icon: <HighlightOutlined/>,
     },
     {
-        label: <Link to="/acknowledgment/resume">Äquivalenz fortfahren</Link>,
-        key: 'acknowledgment-resume',
+        label: <Link to="/equivalence/update">Äquivalenz fortfahren</Link>,
+        key: 'update-acknowledgment',
         icon: <PlayCircleOutlined/>,
     },
     {

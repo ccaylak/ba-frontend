@@ -5,13 +5,10 @@ import {Route, Routes} from "react-router-dom";
 import BaNavbar from "./components/BaNavbar";
 import BaSearch from "./pages/BaSearch";
 import BaSearchResult from "./pages/BaSearchResult";
-import BaCheckEquivalence from "./pages/BaCheckEquivalence";
-import BaPausedRequests from "./pages/BaPausedRequests";
-import BaEnterEquivalence from "./pages/BaEnterEquivalence";
-import BaEditCourse from "./pages/BaEditCourse";
-import BaEditList from "./components/BaEditList";
+import BaStepper from "./pages/BaStepper";
+import BaUpdateAcknowledgement from "./pages/BaUpdateAcknowledgement";
 
-function App() {
+const App = () => {
     return (
         <Layout>
             <Header>
@@ -21,12 +18,11 @@ function App() {
                 <Routes>
                     <Route path="/search" element={<BaSearch/>}/>
                     <Route path="/search/result" element={<BaSearchResult/>}/>
-                    <Route path="/equivalence/check" element={<BaCheckEquivalence/>}/>
-                    <Route path="/acknowledgment/resume" element={<BaPausedRequests/>}></Route>
-                    <Route path="/equivalence/enter" element={<BaEnterEquivalence/>}/>
-                    <Route path="/search/data" element={<BaSearchResult/>}></Route>
-                    <Route path="/edit/course" element={<BaEditCourse/>}/>
-                    <Route path="/edit/module" element={<BaEditList/>}/>
+
+                    <Route path="/equivalence/check" element={<BaStepper mode='checkEquivalence'/>}/>
+                    <Route path="/equivalence/enter" element={<BaStepper mode='enterEquivalence'/>}/>
+                    <Route path="/equivalence/update" element={<BaUpdateAcknowledgement/>}/>
+
                 </Routes>
             </Content>
             <Footer style={{textAlign: 'center'}} className={"secondary-color-light"}>

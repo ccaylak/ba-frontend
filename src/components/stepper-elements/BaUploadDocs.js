@@ -1,30 +1,10 @@
 import './BaUploadDocs.css';
 
-import {Col, notification, Row} from "antd";
+import {Col, Row} from "antd";
 import {InboxOutlined} from "@ant-design/icons";
 import Dragger from "antd/lib/upload/Dragger";
 
 function BaUploadDocs(props) {
-
-    const [api, contextHolder] = notification.useNotification();
-    const openNotificationWithIcon = (type, fileName) => {
-        let messageContent = "";
-        let descriptionContent = "";
-
-        if (type === 'success') {
-            messageContent = "Erfolgreich hochgeladen";
-            descriptionContent = `${fileName} wurde dem Expertensystem übermittelt.`;
-        }
-        if (type === 'error') {
-            messageContent = "Hochladen fehlgeschlagen";
-            descriptionContent = `${fileName} konnte dem Expertensystem nicht übermittelt werden.`;
-        }
-
-        api[type]({
-            message: messageContent,
-            description: descriptionContent,
-        });
-    };
 
     const uploadProps = {
         name: 'file',
@@ -33,32 +13,23 @@ function BaUploadDocs(props) {
         maxCount: 1,
         onChange(info) {
             const {status} = info.file;
-            if (status !== 'uploading') {
-                console.log(info.file.response);
-            }
             if (status === 'done') {
-                localStorage.setItem("fileName", info.file.response);
-                openNotificationWithIcon('success', info.file.name);
-            } else if (status === 'error') {
-                openNotificationWithIcon('error', info.file.name);
+                props.onUploadPDF(info.file.response);
             }
-        },
-        onDrop(e) {
-            console.log('Dropped files', e.dataTransfer.files);
         },
     };
 
     return (
         <>
-            {contextHolder}
             <Row justify={"center"} align={"middle"}>
-                <div style={{width: "50%", padding: "0 100px"}}>
+                <div style={{width: "70%", padding: "0 100px"}}>
                     <Row justify={"center"} align={"middle"} style={{padding: "100px 0"}}>
                         <Col>
                             {props.description}
                         </Col>
                     </Row>
-                    <Dragger listType={"picture-card"} {...uploadProps}>
+                    <Dragger listType={"picture-card"}
+                             {...uploadProps}>
                         <p className="ant-upload-drag-icon">
                             <InboxOutlined/>
                         </p>

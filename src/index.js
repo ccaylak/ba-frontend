@@ -7,14 +7,11 @@ import {BrowserRouter} from "react-router-dom";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-    <React.StrictMode>
-        <BrowserRouter>
-            <App/>
-        </BrowserRouter>
-    </React.StrictMode>
+    <BrowserRouter>
+        <App/>
+    </BrowserRouter>
 );
-
-// <React.StrictMode> um alles drum herum </React.StrictMode>
+// Ich habe <React.StrictMode> </React.StrictMode> entfernt
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals

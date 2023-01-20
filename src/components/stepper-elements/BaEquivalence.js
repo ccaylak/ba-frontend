@@ -1,137 +1,187 @@
-import {Button, Card, Col, Modal, Row, Table} from "antd";
-import {CloseOutlined, ExclamationCircleFilled, SaveOutlined} from "@ant-design/icons";
-import {useEffect, useState} from "react";
-import axios from 'axios';
+import {Button, Col, Modal, Row, Table} from "antd";
+import {CloseOutlined, SaveOutlined} from "@ant-design/icons";
 import ColumnGroup from "antd/es/table/ColumnGroup";
 import Column from "antd/es/table/Column";
 import {useNavigate} from "react-router-dom";
+import {useEffect, useState} from "react";
 
-const {confirm} = Modal;
+const BaEquivalence = (props) => {
 
-function BaEquivalence(props) {
-
-    const [acknowledgmentData, setAcknowledgmentData] = useState({});
+    const [acknowledgementData, setAcknowledgementData] = useState([]);
+    const [open, setOpen] = useState(false);
+    const [modal, contextHolder] = Modal.useModal();
 
     const navigate = useNavigate();
 
     useEffect(() => {
-        setAcknowledgmentData(JSON.parse(localStorage.getItem('acknowledgmentData')))
+
+        const checkEquivalence = async () => {
+            let response = await fetch("http://localhost:8080/check/acknowledgment/", {
+                method: 'POST',
+                body: JSON.stringify(props.data),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            });
+
+            const responseData = await response.json();
+
+            const unknownResponseData = responseData.filter(entry => entry.originAckGrade === 'unbekannt');
+            const knownResponseData = responseData.filter(entry => !(entry.originAckGrade === 'unbekannt'));
+
+            if (unknownResponseData.length > 0) {
+                setOpen(true);
+            }
+
+            modal.info({
+                open: open,
+                title: `${unknownResponseData.length} fehlende Äquivalenzen`,
+                width: "auto",
+                okText: "Okay!",
+                content:
+                    <>
+                        <p>Für die nachfolgende Auflistung von Modulen wurden keine Äquivalenzen gefunden. Diese werden
+                            also ToDos unter dem Reiter "Fortfahren" aufgeführt</p>
+                        <Table
+                            size={"small"}
+                            dataSource={unknownResponseData}
+                            pagination={false}
+                        >
+                            <ColumnGroup title={"Fachhochschule Dortmund"}>
+                                <Column title="Modulnummer" dataIndex="requestedModuleId" key="requestedModuleId"/>
+                                <Column title="Modul" dataIndex="requestedModule" key="requestedModule"/>
+                                <Column title="ECTS" dataIndex="requestedEcts" key="requestedEcts"/>
+                            </ColumnGroup>
+                            <ColumnGroup title={"Fremde Hochschule"}>
+                                <Column title="Modul" dataIndex="originModule" key="originModule"/>
+                                <Column title="ECTS" dataIndex="originEcts" key="originEcts"/>
+                                <Column title="Note" dataIndex="originGrade" key="originGrade"/>
+                                <>
+                                    {props.mode === 'enterEquivalence' &&
+                                        <Column title="Anerkannte Note" dataIndex="originAckGrade"
+                                                key="originAckGrade"/>
+                                    }
+                                </>
+                                <>
+                                    {props.mode === 'checkEquivalence' &&
+                                        <Column title="Entscheidung" dataIndex="originAckGrade" key="originAckGrade"/>
+                                    }
+                                </>
+                            </ColumnGroup>
+                        </Table>
+                    </>
+                ,
+                centered: true,
+                onOk() {
+                    setOpen(false);
+                    fetch("http://localhost:8080/save/acknowledgment/", {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            originUniversity: props.data.originUniversity,
+                            originCourse: props.data.originCourse,
+                            requestedCourse: props.data.requestedCourse,
+                            regularModules: unknownResponseData,
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                    }).then();
+                }
+            });
+
+            setAcknowledgementData(knownResponseData);
+        }
+
+        if (props.mode === 'checkEquivalence') {
+            checkEquivalence().catch();
+        }
     }, []);
 
-    function saveData() {
-        axios.post("http://localhost:8080/save/acknowledgment/", acknowledgmentData)
-            .then(response => console.log("success"));
+    const saveFormData = async () => {
+        return await fetch("http://localhost:8080/save/acknowledgment/", {
+            method: 'POST',
+            body: JSON.stringify(props.data),
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        });
     }
 
-    function renderTable(data, type) {
-        if (data.regularModules !== undefined && data.electiveModules !== undefined) {
-            if (type === 'enterEquivalence') {
-                return (
-                    <Table
-                        style={{padding: "0 10%"}}
-                        dataSource={[...data.electiveModules, ...data.regularModules]}
-                        bordered
-                        pagination={false}
-                    >
-                        <ColumnGroup title="Angefragte Daten">
-                            <Column title="Modulnummer" dataIndex="requestedModuleId" key="requestedModuleId"/>
-                            <Column title="Modul" dataIndex="requestedModule" key="requestedModule"/>
-                            <Column title="ECTS" dataIndex="requestedEcts" key="requestedEcts"/>
-                        </ColumnGroup>
-                        <ColumnGroup title="Ursprungsdaten">
-                            <Column title="Modul" dataIndex="originModule" key="originModule"/>
-                            <Column title="ECTS" dataIndex="originEcts" key="originEcts"/>
-                            <Column title="Note" dataIndex="originGrade" key="originGrade"/>
-                            <Column title="Anerkannte Note" dataIndex="originAckGrade" key="originAckGrade"/>
-                        </ColumnGroup>
-                    </Table>
-                );
-            }
-            if (type === 'checkEquivalence') {
-                return (
-                    <Table
-                        style={{padding: "0 10%"}}
-                        dataSource={[...data.electiveModules, ...data.regularModules]}
-                        bordered
-                        pagination={false}
-                    >
-                        <ColumnGroup title="Angefragte Daten">
-                            <Column title="Modulnummer" dataIndex="requestedModuleId" key="requestedModuleId"/>
-                            <Column title="Modul" dataIndex="requestedModule" key="requestedModule"/>
-                            <Column title="ECTS" dataIndex="requestedEcts" key="requestedEcts"/>
-                        </ColumnGroup>
-                        <ColumnGroup title="Ursprungsdaten">
-                            <Column title="Modul" dataIndex="originModule" key="originModule"/>
-                            <Column title="ECTS" dataIndex="originEcts" key="originEcts"/>
-                            <Column title="Note" dataIndex="originGrade" key="originGrade"/>
-                            <Column title="Anerkannte Note" dataIndex="originAckGrade" key="originAckGrade"/>
-                        </ColumnGroup>
-                        <ColumnGroup title="Entscheidung">
-                            <Column title={"Note"}>xD</Column>
-                        </ColumnGroup>
-                    </Table>
-                );
-            }
+    const clickHandler = () => {
+        saveFormData()
+            .catch((error) => error.message);
+    }
+
+    const renderTable = (acknowledgementData) => {
+        let dataSource = [];
+        if (props.mode === 'enterEquivalence') {
+            dataSource = [...props.data.electiveModules, ...props.data.regularModules];
+        } else if (props.mode === 'checkEquivalence') {
+            dataSource = [...acknowledgementData];
         }
+        return (
+            <Table
+                dataSource={dataSource}
+                pagination={false}
+                bordered
+                style={{marginTop: "1%", marginBottom: "1%"}}
+            >
+                <ColumnGroup title={`Fachhochschule Dortmund: ${props.data.requestedCourse}`}>
+                    <Column title="Modulnummer" dataIndex="requestedModuleId" key="requestedModuleId"/>
+                    <Column title="Modul" dataIndex="requestedModule" key="requestedModule"/>
+                    <Column title="ECTS" dataIndex="requestedEcts" key="requestedEcts"/>
+                </ColumnGroup>
+                <ColumnGroup title={`${props.data.originUniversity}: ${props.data.originCourse}`}>
+                    <Column title="Modul" dataIndex="originModule" key="originModule"/>
+                    <Column title="ECTS" dataIndex="originEcts" key="originEcts"/>
+                    <Column title="Note" dataIndex="originGrade" key="originGrade"/>
+                    <>
+                        {props.mode === 'enterEquivalence' &&
+                            <Column title="Anerkannte Note" dataIndex="originAckGrade" key="originAckGrade"/>
+                        }
+                    </>
+                    <>
+                        {props.mode === 'checkEquivalence' &&
+                            <Column title="Symbol" dataIndex="originAckGrade" key="originAckGrade"/>
+                        }
+                    </>
+                </ColumnGroup>
+            </Table>
+        );
     }
 
-    const showConfirm = () => {
-        confirm({
-            title: 'Willst du die aktuelle Anerkennung wirklich verwerfen?',
-            icon: <ExclamationCircleFilled/>,
-            okText: 'Ja, verwerfen',
-            cancelText: 'Nein, nicht verwerfen',
+    const showResetModal = () => {
+        Modal.warning({
+            title: "Willst du die aktuelle Anerkennung wirklich verwerfen?",
+            okText: "Ja, verwerfen",
+            cancelText: "Nein, nicht verwerfen",
             onOk() {
-                killLocalStorage();
+                navigate("/");
             },
         });
     };
 
-    function killLocalStorage() {
-        localStorage.removeItem("fileName");
-        localStorage.removeItem("acknowledgmentData");
-        navigate("/");
-    }
-
-    function buttonRow(type) {
-        if (type === 'enterEquivalence') {
-            return (
-                <>
-                    <Row justify="space-around" align="middle" style={{paddingTop: "1%"}}>
+    return (
+        <Row justify={"center"} style={{overflowY: "scroll", height: '70vh'}}>
+            <Col>
+                {renderTable(acknowledgementData)}
+                {contextHolder}
+                {props.mode === 'enterEquivalence' &&
+                    <Row>
                         <Col>
-                            <Button type="primary" onClick={saveData} icon={<SaveOutlined/>}>
+                            <Button type="primary" onClick={clickHandler} icon={<SaveOutlined/>}>
                                 Speichern
                             </Button>
                         </Col>
                         <Col>
-                            <Button type="danger" onClick={showConfirm} icon={<CloseOutlined/>}>
+                            <Button type="danger" onClick={showResetModal} icon={<CloseOutlined/>}>
                                 Verwerfen
                             </Button>
                         </Col>
                     </Row>
-                </>
-            );
-        }
-    }
-
-    return (
-        <>
-            <Row justify="center" align="middle"
-                 style={{height: '70vh', overflow: "auto"}}>
-                <Col span={18}>
-                    <Card title="Zusammenfassung der erfassten Daten">
-                        <Card.Grid style={{width: '100%', textAlign: 'left'}} hoverable={false}>
-                            <span
-                                style={{float: "left"}}>Angefragter Studiengang: {acknowledgmentData.requestedCourse}</span>
-                            <span
-                                style={{float: "right"}}>Ursprungsuniversität: {acknowledgmentData.originUniversity}: {acknowledgmentData.originCourse}</span>
-                        </Card.Grid>
-                        {renderTable(acknowledgmentData, props.type)}
-                    </Card>
-                </Col>
-            </Row>
-            {buttonRow(props.type)}
-        </>
+                }
+            </Col>
+        </Row>
     );
 }
 
